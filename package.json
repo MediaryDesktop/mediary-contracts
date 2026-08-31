@@ -1,0 +1,19 @@
+{
+	"name": "@mediaryorg/mediary-contracts-workspace",
+	"private": true,
+	"type": "module",
+	"description": "Codegen harness for the Mediary cloud API contract. The publishable package is in ts/.",
+	"scripts": {
+		"generate": "node scripts/generate.mjs",
+		"check": "node scripts/generate.mjs --check",
+		"build": "npm run build --prefix ts",
+		"format": "prettier --write \"**/*.{ts,mjs,json,md,yaml,yml}\"",
+		"format:check": "prettier --check \"**/*.{ts,mjs,json,md,yaml,yml}\""
+	},
+	"devDependencies": {
+		"@mediaryorg/core": "^1.0.5",
+		"openapi-typescript": "^7.13.0",
+		"prettier": "^3.9.6",
+		"typescript": "^5.9.3"
+	}
+}

@@ -1,0 +1,16 @@
+# Generates the Go client the self-hosted node uses to talk to the cloud.
+#
+# Client and models only — no server stubs. The cloud implements its API with
+# huma and authors the spec from that code; generating a server here would
+# create a second, competing definition of the same endpoints.
+package: cloudclient
+output: go/cloudclient/client.gen.go
+
+generate:
+  models: true
+  client: true
+  embedded-spec: false
+
+output-options:
+  skip-prune: true
+  user-templates: {}

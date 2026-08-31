@@ -1,0 +1,7 @@
+# Generated — the generator owns the formatting, and reformatting it here would
+# make every regeneration look like a diff.
+ts/src/*.gen.ts
+go/
+openapi/
+ts/dist/
+node_modules/

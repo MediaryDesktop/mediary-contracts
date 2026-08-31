@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The generated files are committed so consumers can `go get` and `npm i`
+  # without a toolchain. CI's only job is to prove they still match the spec.
+  generated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27"
+          cache: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0
+
+      - run: npm ci
+
+      - name: Generated output matches the spec
+        run: npm run check
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Build Go distribution
+        working-directory: go
+        run: go build ./...
+
+      - run: npm ci
+      - run: npm run format:check
+
+      - name: Build TypeScript distribution
+        working-directory: ts
+        run: |
+          npm ci
+          npm run build

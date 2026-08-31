@@ -1,0 +1,12 @@
+# Normalise line endings so a checkout on Windows produces byte-identical files
+# to one on Linux.
+#
+# `npm run check` regenerates the Go client and the TypeScript types and fails
+# if they differ from what is committed. Line-ending conversion on checkout
+# would make that check fail on Windows for reasons unrelated to the contract.
+* text=auto eol=lf
+
+# Generated — diffing it is the review, so it must never be reformatted.
+openapi/*.yaml text eol=lf
+go/cloudclient/*.gen.go text eol=lf
+ts/src/*.gen.ts text eol=lf

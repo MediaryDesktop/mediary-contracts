@@ -1,0 +1,842 @@
+components:
+  schemas:
+    ClientRequirements:
+      additionalProperties: false
+      properties:
+        min_supported:
+          description: Oldest client build allowed to use cloud features. Empty means no minimum is enforced.
+          examples:
+            - 1.2.0
+          type: string
+        recommended:
+          description: Newest available build, for a non-blocking update hint. Empty means no hint.
+          examples:
+            - 1.4.0
+          type: string
+        update_url:
+          description: Where to send the user to update. Always present when min_supported is set.
+          examples:
+            - https://mediary.example/download
+          type: string
+      type: object
+    ErrorDetail:
+      additionalProperties: false
+      properties:
+        location:
+          description: Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id'
+          type: string
+        message:
+          description: Error message text
+          type: string
+        value:
+          description: The value at the given location
+      type: object
+    ErrorModel:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/ErrorModel.json
+          format: uri
+          readOnly: true
+          type: string
+        detail:
+          description: A human-readable explanation specific to this occurrence of the problem.
+          examples:
+            - Property foo is required but is missing.
+          type: string
+        errors:
+          description: Optional list of individual error details
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+          type:
+            - array
+            - "null"
+        instance:
+          description: A URI reference that identifies the specific occurrence of the problem.
+          examples:
+            - https://example.com/error-log/abc123
+          format: uri
+          type: string
+        status:
+          description: HTTP status code
+          examples:
+            - 400
+          format: int64
+          type: integer
+        title:
+          description: A short, human-readable summary of the problem type. This value should not change between occurrences of the error.
+          examples:
+            - Bad Request
+          type: string
+        type:
+          default: about:blank
+          description: A URI reference to human-readable documentation for the error.
+          examples:
+            - https://example.com/errors/example
+          format: uri
+          type: string
+      type: object
+    HealthOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/HealthOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        built:
+          description: Build timestamp.
+          examples:
+            - "2026-08-27T12:00:00Z"
+          type: string
+        client:
+          $ref: "#/components/schemas/ClientRequirements"
+          description: Which client builds this deployment serves.
+        commit:
+          description: Git commit the build came from.
+          examples:
+            - abc1234
+          type: string
+        status:
+          description: Service status.
+          examples:
+            - ok
+          type: string
+        version:
+          description: Semantic version of the running build.
+          examples:
+            - 0.1.0
+          type: string
+      required:
+        - status
+        - version
+        - commit
+        - built
+        - client
+      type: object
+    LoginInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/LoginInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        email:
+          description: The account's address.
+          format: email
+          maxLength: 254
+          type: string
+        password:
+          description: The account's password.
+          maxLength: 128
+          type: string
+      required:
+        - email
+        - password
+      type: object
+    OAuthCallbackInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/OAuthCallbackInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        code:
+          description: Authorization code from the provider's redirect.
+          type: string
+        state:
+          description: The state value returned alongside the code.
+          type: string
+      required:
+        - code
+        - state
+      type: object
+    OAuthProvidersOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/OAuthProvidersOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        providers:
+          description: OAuth providers available on this deployment, e.g. ["google"].
+          items:
+            type: string
+          type:
+            - array
+            - "null"
+      required:
+        - providers
+      type: object
+    OAuthStartOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/OAuthStartOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        url:
+          description: Open this in a browser to begin the provider's consent flow.
+          type: string
+      required:
+        - url
+      type: object
+    PingOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/PingOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        module:
+          description: Module name.
+          examples:
+            - catalog
+          type: string
+        ready:
+          description: True when the module's dependencies are wired.
+          type: boolean
+      required:
+        - module
+        - ready
+      type: object
+    PingOutputBody1:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/PingOutputBody1.json
+          format: uri
+          readOnly: true
+          type: string
+        module:
+          description: Module name.
+          examples:
+            - metadata
+          type: string
+        ready:
+          description: True when the module's dependencies are wired.
+          type: boolean
+      required:
+        - module
+        - ready
+      type: object
+    PingOutputBody2:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/PingOutputBody2.json
+          format: uri
+          readOnly: true
+          type: string
+        module:
+          description: Module name.
+          examples:
+            - social
+          type: string
+        ready:
+          description: True when the module's dependencies are wired.
+          type: boolean
+      required:
+        - module
+        - ready
+      type: object
+    PingOutputBody3:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/PingOutputBody3.json
+          format: uri
+          readOnly: true
+          type: string
+        module:
+          description: Module name.
+          examples:
+            - moderation
+          type: string
+        ready:
+          description: True when the module's dependencies are wired.
+          type: boolean
+      required:
+        - module
+        - ready
+      type: object
+    RegisterInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/RegisterInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        display_name:
+          description: Name shown to other users. Must be unique, ignoring case.
+          maxLength: 40
+          minLength: 2
+          type: string
+        email:
+          description: Address to register. Stored lowercased.
+          format: email
+          maxLength: 254
+          type: string
+        password:
+          description: At least 10 characters. No composition rules — length is what makes a password hard to guess.
+          maxLength: 128
+          minLength: 10
+          type: string
+      required:
+        - email
+        - password
+        - display_name
+      type: object
+    RevokedOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/RevokedOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        revoked:
+          description: Number of sessions ended, including the current one.
+          format: int64
+          type: integer
+      required:
+        - revoked
+      type: object
+    SessionBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/SessionBody.json
+          format: uri
+          readOnly: true
+          type: string
+        expires_at:
+          description: Absolute deadline. Activity extends the idle window, never this.
+          format: date-time
+          type: string
+        token:
+          description: "Opaque session identifier. Send it as 'Authorization: Bearer <token>'."
+          type: string
+        user:
+          $ref: "#/components/schemas/UserBody"
+          description: The signed-in account.
+      required:
+        - token
+        - expires_at
+        - user
+      type: object
+    UserBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/UserBody.json
+          format: uri
+          readOnly: true
+          type: string
+        created_at:
+          description: When the account was created.
+          format: date-time
+          type: string
+        display_name:
+          description: Name shown to other users.
+          type: string
+        email:
+          description: The account's normalised address.
+          format: email
+          type: string
+        email_verified:
+          description: Whether the address has been confirmed.
+          type: boolean
+        id:
+          description: Stable account identifier.
+          format: uuid
+          type: string
+        role:
+          description: Permission level.
+          enum:
+            - user
+            - moderator
+            - admin
+          type: string
+      required:
+        - id
+        - email
+        - display_name
+        - role
+        - email_verified
+        - created_at
+      type: object
+  securitySchemes:
+    deviceToken:
+      description: Long-lived token issued to a self-hosted node during pairing.
+      in: header
+      name: X-Mediary-Device-Token
+      type: apiKey
+    sessionToken:
+      description: Server-side session. The value is an opaque identifier with no claims inside it; every fact about the session lives in Redis, which is what makes revocation immediate. Sent as a header by native clients — there is no cookie transport, and therefore no CSRF surface.
+      scheme: bearer
+      type: http
+info:
+  description: "Public API of the Mediary cloud: catalog, accounts, social layer and moderation. Consumed by the desktop client and by paired self-hosted nodes."
+  title: Mediary Cloud API
+  version: 0.0.0-dev
+openapi: 3.1.0
+paths:
+  /v1/account/me:
+    get:
+      description: Returns the signed-in account. Read from the database rather than from the session, so a change of role or name is visible immediately.
+      operationId: getCurrentAccount
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserBody"
+          description: OK
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Current account
+      tags:
+        - account
+  /v1/account/oauth/providers:
+    get:
+      description: Lists providers this deployment has real credentials for.
+      operationId: listOAuthProviders
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthProvidersOutputBody"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Available OAuth providers
+      tags:
+        - account
+  /v1/account/oauth/{provider}/callback:
+    post:
+      description: Exchanges an intercepted redirect for a session. Creates the account on first sign-in; refuses to link a provider to an email that already has an account under a different method.
+      operationId: completeOAuth
+      parameters:
+        - description: Must match the provider OAuthStart was called with.
+          in: path
+          name: provider
+          required: true
+          schema:
+            description: Must match the provider OAuthStart was called with.
+            type: string
+        - description: Recorded with the session so a user can recognise it later.
+          in: header
+          name: User-Agent
+          schema:
+            description: Recorded with the session so a user can recognise it later.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthCallbackInputBody"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionBody"
+          description: Created
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+        "502":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Bad Gateway
+      summary: Complete OAuth sign-in
+      tags:
+        - account
+  /v1/account/oauth/{provider}/start:
+    post:
+      description: Returns the provider's consent URL. There is no cloud-hosted callback page — the client opens this URL itself and intercepts the final redirect before it reaches the network.
+      operationId: startOAuth
+      parameters:
+        - description: OAuth provider identifier, e.g. "google".
+          in: path
+          name: provider
+          required: true
+          schema:
+            description: OAuth provider identifier, e.g. "google".
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthStartOutputBody"
+          description: OK
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Not Found
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      summary: Start OAuth sign-in
+      tags:
+        - account
+  /v1/account/register:
+    post:
+      description: Registers an account and signs it in. The returned token is the session identifier; it is shown once and cannot be recovered.
+      operationId: registerAccount
+      parameters:
+        - description: Recorded with the session so a user can recognise it later.
+          in: header
+          name: User-Agent
+          schema:
+            description: Recorded with the session so a user can recognise it later.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInputBody"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionBody"
+          description: Created
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      summary: Create an account
+      tags:
+        - account
+  /v1/account/sessions:
+    delete:
+      description: Ends every session the account holds, including this one. Intended for a lost or stolen device.
+      operationId: deleteAllSessions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevokedOutputBody"
+          description: OK
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Sign out everywhere
+      tags:
+        - account
+    post:
+      description: Exchanges credentials for a session identifier. Repeated failures throttle the account, not the address they come from.
+      operationId: createSession
+      parameters:
+        - description: Recorded with the session so a user can recognise it later.
+          in: header
+          name: User-Agent
+          schema:
+            description: Recorded with the session so a user can recognise it later.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInputBody"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionBody"
+          description: Created
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Forbidden
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      summary: Sign in
+      tags:
+        - account
+  /v1/account/sessions/current:
+    delete:
+      description: "Ends the session used to make this call. Revocation is immediate: the identifier is deleted, not denylisted."
+      operationId: deleteCurrentSession
+      responses:
+        "204":
+          description: No Content
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Sign out
+      tags:
+        - account
+  /v1/catalog/ping:
+    get:
+      description: Reports whether the catalog module is wired. Placeholder for phase 0.
+      operationId: pingCatalog
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingOutputBody"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Catalog module status
+      tags:
+        - catalog
+  /v1/health:
+    get:
+      description: Reports liveness and the build the process is running.
+      operationId: getHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthOutputBody"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Service health
+      tags:
+        - health
+  /v1/metadata/ping:
+    get:
+      description: Reports whether the metadata module is wired. Placeholder for phase 0.
+      operationId: pingMetadata
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingOutputBody1"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Metadata module status
+      tags:
+        - metadata
+  /v1/moderation/ping:
+    get:
+      description: Reports whether the moderation module is wired. Placeholder for phase 0.
+      operationId: pingModeration
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingOutputBody3"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Moderation module status
+      tags:
+        - moderation
+  /v1/social/ping:
+    get:
+      description: Reports whether the social module is wired. Placeholder for phase 0.
+      operationId: pingSocial
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingOutputBody2"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Social module status
+      tags:
+        - social
+tags:
+  - description: Liveness and build information.
+    name: health
+  - description: Registration, sessions, profiles and node pairing.
+    name: account
+  - description: "Unified media catalog: search, filters, title pages."
+    name: catalog
+  - description: Third-party metadata sources and their cached projections.
+    name: metadata
+  - description: Ratings, reviews, comments and user lists.
+    name: social
+  - description: Submission queue, reports, merges and takedowns.
+    name: moderation
