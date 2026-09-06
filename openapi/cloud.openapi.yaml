@@ -1,5 +1,92 @@
 components:
   schemas:
+    AcceptedOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/AcceptedOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        expires_at:
+          description: When a code sent now stops being accepted. Present whether or not one was actually sent, so the answer cannot be used to tell which addresses have accounts.
+          format: date-time
+          type: string
+        message:
+          description: Human-readable confirmation that the request was accepted.
+          type: string
+      required:
+        - message
+        - expires_at
+      type: object
+    Body:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/Body.json
+          format: uri
+          readOnly: true
+          type: string
+        created_at:
+          description: When the account was created.
+          format: date-time
+          type: string
+        display_name:
+          description: Name shown to other users.
+          type: string
+        email:
+          description: The account's normalised address.
+          format: email
+          type: string
+        email_verified:
+          description: Whether the address has been confirmed.
+          type: boolean
+        id:
+          description: Stable account identifier.
+          format: uuid
+          type: string
+        role:
+          description: Permission level.
+          enum:
+            - user
+            - moderator
+            - admin
+          type: string
+      required:
+        - id
+        - email
+        - display_name
+        - role
+        - email_verified
+        - created_at
+      type: object
+    ChangePasswordInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/ChangePasswordInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        current_password:
+          description: The password in use now. Required even though the session proves identity.
+          maxLength: 128
+          type: string
+        new_password:
+          description: The replacement. Same rules as registration.
+          maxLength: 128
+          minLength: 10
+          type: string
+      required:
+        - current_password
+        - new_password
+      type: object
     ClientRequirements:
       additionalProperties: false
       properties:
@@ -18,6 +105,52 @@ components:
           examples:
             - https://mediary.example/download
           type: string
+      type: object
+    CompletePasswordResetInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/CompletePasswordResetInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        code:
+          description: The 6-digit code from the reset email.
+          pattern: ^[0-9]{6}$
+          type: string
+        email:
+          description: The address the code was sent to.
+          format: email
+          maxLength: 254
+          type: string
+        password:
+          description: The new password. Same rules as registration.
+          maxLength: 128
+          minLength: 10
+          type: string
+      required:
+        - email
+        - code
+        - password
+      type: object
+    ConfirmEmailInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/ConfirmEmailInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        code:
+          description: The 6-digit code from the confirmation email.
+          pattern: ^[0-9]{6}$
+          type: string
+      required:
+        - code
       type: object
     ErrorDetail:
       additionalProperties: false
@@ -181,6 +314,23 @@ components:
       required:
         - providers
       type: object
+    OAuthStartInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/OAuthStartInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        callback_port:
+          description: Loopback port the native client is listening on. The redirect is then aimed at http://127.0.0.1:<port>/oauth/callback. Omit it on deployments that use the provider's registered redirect URL instead.
+          format: int64
+          maximum: 65535
+          minimum: 1024
+          type: integer
+      type: object
     OAuthStartOutputBody:
       additionalProperties: false
       properties:
@@ -196,94 +346,6 @@ components:
           type: string
       required:
         - url
-      type: object
-    PingOutputBody:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/PingOutputBody.json
-          format: uri
-          readOnly: true
-          type: string
-        module:
-          description: Module name.
-          examples:
-            - catalog
-          type: string
-        ready:
-          description: True when the module's dependencies are wired.
-          type: boolean
-      required:
-        - module
-        - ready
-      type: object
-    PingOutputBody1:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/PingOutputBody1.json
-          format: uri
-          readOnly: true
-          type: string
-        module:
-          description: Module name.
-          examples:
-            - metadata
-          type: string
-        ready:
-          description: True when the module's dependencies are wired.
-          type: boolean
-      required:
-        - module
-        - ready
-      type: object
-    PingOutputBody2:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/PingOutputBody2.json
-          format: uri
-          readOnly: true
-          type: string
-        module:
-          description: Module name.
-          examples:
-            - social
-          type: string
-        ready:
-          description: True when the module's dependencies are wired.
-          type: boolean
-      required:
-        - module
-        - ready
-      type: object
-    PingOutputBody3:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/PingOutputBody3.json
-          format: uri
-          readOnly: true
-          type: string
-        module:
-          description: Module name.
-          examples:
-            - moderation
-          type: string
-        ready:
-          description: True when the module's dependencies are wired.
-          type: boolean
-      required:
-        - module
-        - ready
       type: object
     RegisterInputBody:
       additionalProperties: false
@@ -314,6 +376,24 @@ components:
         - email
         - password
         - display_name
+      type: object
+    RequestPasswordResetInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/RequestPasswordResetInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        email:
+          description: Address to send a reset code to.
+          format: email
+          maxLength: 254
+          type: string
+      required:
+        - email
       type: object
     RevokedOutputBody:
       additionalProperties: false
@@ -350,55 +430,12 @@ components:
           description: "Opaque session identifier. Send it as 'Authorization: Bearer <token>'."
           type: string
         user:
-          $ref: "#/components/schemas/UserBody"
+          $ref: "#/components/schemas/Body"
           description: The signed-in account.
       required:
         - token
         - expires_at
         - user
-      type: object
-    UserBody:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/UserBody.json
-          format: uri
-          readOnly: true
-          type: string
-        created_at:
-          description: When the account was created.
-          format: date-time
-          type: string
-        display_name:
-          description: Name shown to other users.
-          type: string
-        email:
-          description: The account's normalised address.
-          format: email
-          type: string
-        email_verified:
-          description: Whether the address has been confirmed.
-          type: boolean
-        id:
-          description: Stable account identifier.
-          format: uuid
-          type: string
-        role:
-          description: Permission level.
-          enum:
-            - user
-            - moderator
-            - admin
-          type: string
-      required:
-        - id
-        - email
-        - display_name
-        - role
-        - email_verified
-        - created_at
       type: object
   securitySchemes:
     deviceToken:
@@ -416,6 +453,92 @@ info:
   version: 0.0.0-dev
 openapi: 3.1.0
 paths:
+  /v1/account/email/verification:
+    post:
+      description: "Mails a fresh 6-digit code to the signed-in account's own address. Takes no email parameter on purpose: the session already says who is asking, so the endpoint cannot be used to probe which addresses are registered."
+      operationId: sendEmailVerification
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedOutputBody"
+          description: Accepted
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Send a confirmation code
+      tags:
+        - auth
+  /v1/account/email/verification/confirm:
+    post:
+      description: "Spends a code and marks the address confirmed. Idempotent: confirming an already-confirmed address returns the account unchanged rather than an error."
+      operationId: confirmEmail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmEmailInputBody"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Body"
+          description: OK
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Confirm the email address
+      tags:
+        - auth
   /v1/account/me:
     get:
       description: Returns the signed-in account. Read from the database rather than from the session, so a change of role or name is visible immediately.
@@ -425,7 +548,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserBody"
+                $ref: "#/components/schemas/Body"
           description: OK
         "401":
           content:
@@ -443,7 +566,7 @@ paths:
         - sessionToken: []
       summary: Current account
       tags:
-        - account
+        - users
   /v1/account/oauth/providers:
     get:
       description: Lists providers this deployment has real credentials for.
@@ -463,10 +586,10 @@ paths:
           description: Error
       summary: Available OAuth providers
       tags:
-        - account
+        - auth
   /v1/account/oauth/{provider}/callback:
     post:
-      description: Exchanges an intercepted redirect for a session. Creates the account on first sign-in; refuses to link a provider to an email that already has an account under a different method.
+      description: Exchanges a caught redirect for a session, replaying the PKCE verifier held against the state. Creates the account on first sign-in; refuses to link a provider to an email that already has an account under a different method.
       operationId: completeOAuth
       parameters:
         - description: Must match the provider OAuthStart was called with.
@@ -533,10 +656,10 @@ paths:
           description: Bad Gateway
       summary: Complete OAuth sign-in
       tags:
-        - account
+        - auth
   /v1/account/oauth/{provider}/start:
     post:
-      description: Returns the provider's consent URL. There is no cloud-hosted callback page — the client opens this URL itself and intercepts the final redirect before it reaches the network.
+      description: Returns the provider's consent URL, bound to a PKCE challenge whose verifier stays here. There is no cloud-hosted callback page — the client opens the URL in the system browser and catches the redirect on its own loopback listener.
       operationId: startOAuth
       parameters:
         - description: OAuth provider identifier, e.g. "google".
@@ -546,6 +669,12 @@ paths:
           schema:
             description: OAuth provider identifier, e.g. "google".
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthStartInputBody"
+        required: true
       responses:
         "200":
           content:
@@ -565,6 +694,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorModel"
           description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
         "500":
           content:
             application/problem+json:
@@ -573,10 +708,136 @@ paths:
           description: Internal Server Error
       summary: Start OAuth sign-in
       tags:
-        - account
+        - auth
+  /v1/account/password:
+    put:
+      description: "Replaces the password of the signed-in account and ends every session, this one included. The current password is required as well as the session: an unattended open session should not be enough to lock its owner out."
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInputBody"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Forbidden
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Conflict
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Change the password
+      tags:
+        - auth
+  /v1/account/password/reset:
+    post:
+      description: Mails a reset code if the address belongs to an account that has a password. The response is identical either way — an endpoint that answered honestly would let anyone test an address list against the user base.
+      operationId: requestPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestPasswordResetInputBody"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedOutputBody"
+          description: Accepted
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      summary: Request a password reset
+      tags:
+        - auth
+  /v1/account/password/reset/confirm:
+    post:
+      description: Exchanges a mailed code for a new password and ends every session the account holds, this one included — a reset is the answer to a compromise, and leaving the intruder signed in would defeat it.
+      operationId: completePasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompletePasswordResetInputBody"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      summary: Set a new password with a reset code
+      tags:
+        - auth
   /v1/account/register:
     post:
-      description: Registers an account and signs it in. The returned token is the session identifier; it is shown once and cannot be recovered.
+      description: "Registers an account and mails a confirmation code. The returned token is the session identifier; it is shown once and cannot be recovered. Until the code is spent the session is restricted: it reaches only this account's own profile, the confirmation endpoints and sign-out, and every other operation answers 403."
       operationId: registerAccount
       parameters:
         - description: Recorded with the session so a user can recognise it later.
@@ -618,7 +879,7 @@ paths:
           description: Internal Server Error
       summary: Create an account
       tags:
-        - account
+        - auth
   /v1/account/sessions:
     delete:
       description: Ends every session the account holds, including this one. Intended for a lost or stolen device.
@@ -646,9 +907,9 @@ paths:
         - sessionToken: []
       summary: Sign out everywhere
       tags:
-        - account
+        - auth
     post:
-      description: Exchanges credentials for a session identifier. Repeated failures throttle the account, not the address they come from.
+      description: "Exchanges credentials for a session identifier. Failures are charged twice: to the account, which bounds guessing against one password, and to the calling address, which bounds the same guess sprayed across many accounts."
       operationId: createSession
       parameters:
         - description: Recorded with the session so a user can recognise it later.
@@ -702,7 +963,7 @@ paths:
           description: Internal Server Error
       summary: Sign in
       tags:
-        - account
+        - auth
   /v1/account/sessions/current:
     delete:
       description: "Ends the session used to make this call. Revocation is immediate: the identifier is deleted, not denylisted."
@@ -726,27 +987,7 @@ paths:
         - sessionToken: []
       summary: Sign out
       tags:
-        - account
-  /v1/catalog/ping:
-    get:
-      description: Reports whether the catalog module is wired. Placeholder for phase 0.
-      operationId: pingCatalog
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PingOutputBody"
-          description: OK
-        default:
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ErrorModel"
-          description: Error
-      summary: Catalog module status
-      tags:
-        - catalog
+        - auth
   /v1/health:
     get:
       description: Reports liveness and the build the process is running.
@@ -767,76 +1008,28 @@ paths:
       summary: Service health
       tags:
         - health
-  /v1/metadata/ping:
-    get:
-      description: Reports whether the metadata module is wired. Placeholder for phase 0.
-      operationId: pingMetadata
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PingOutputBody1"
-          description: OK
-        default:
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ErrorModel"
-          description: Error
-      summary: Metadata module status
-      tags:
-        - metadata
-  /v1/moderation/ping:
-    get:
-      description: Reports whether the moderation module is wired. Placeholder for phase 0.
-      operationId: pingModeration
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PingOutputBody3"
-          description: OK
-        default:
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ErrorModel"
-          description: Error
-      summary: Moderation module status
-      tags:
-        - moderation
-  /v1/social/ping:
-    get:
-      description: Reports whether the social module is wired. Placeholder for phase 0.
-      operationId: pingSocial
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PingOutputBody2"
-          description: OK
-        default:
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ErrorModel"
-          description: Error
-      summary: Social module status
-      tags:
-        - social
 tags:
   - description: Liveness and build information.
     name: health
-  - description: Registration, sessions, profiles and node pairing.
-    name: account
-  - description: "Unified media catalog: search, filters, title pages."
-    name: catalog
-  - description: Third-party metadata sources and their cached projections.
-    name: metadata
-  - description: Ratings, reviews, comments and user lists.
-    name: social
-  - description: Submission queue, reports, merges and takedowns.
-    name: moderation
+  - description: Registration, sign-in, sessions, OAuth and password recovery.
+    name: auth
+  - description: Profiles of the signed-in account and of other users.
+    name: users
+  - description: "Unified media catalog: titles, filters, title pages."
+    name: media
+  - description: Search across the catalog and across external sources.
+    name: search
+  - description: "A user's own library: progress, status, ratings."
+    name: library
+  - description: Curated collections published by the service.
+    name: collections
+  - description: Collections a user assembles for themselves.
+    name: user-collections
+  - description: Titles a user has marked as favourite.
+    name: favorites
+  - description: Suggested titles derived from a user's library.
+    name: recommendations
+  - description: "Submission queue: requests to add or amend a title."
+    name: media-requests
+  - description: Cover art and other uploaded imagery.
+    name: image

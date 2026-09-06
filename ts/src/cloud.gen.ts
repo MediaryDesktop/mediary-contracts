@@ -4,6 +4,46 @@
  */
 
 export interface paths {
+    "/v1/account/email/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a confirmation code
+         * @description Mails a fresh 6-digit code to the signed-in account's own address. Takes no email parameter on purpose: the session already says who is asking, so the endpoint cannot be used to probe which addresses are registered.
+         */
+        post: operations["sendEmailVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/email/verification/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm the email address
+         * @description Spends a code and marks the address confirmed. Idempotent: confirming an already-confirmed address returns the account unchanged rather than an error.
+         */
+        post: operations["confirmEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/account/me": {
         parameters: {
             query?: never;
@@ -55,7 +95,7 @@ export interface paths {
         put?: never;
         /**
          * Complete OAuth sign-in
-         * @description Exchanges an intercepted redirect for a session. Creates the account on first sign-in; refuses to link a provider to an email that already has an account under a different method.
+         * @description Exchanges a caught redirect for a session, replaying the PKCE verifier held against the state. Creates the account on first sign-in; refuses to link a provider to an email that already has an account under a different method.
          */
         post: operations["completeOAuth"];
         delete?: never;
@@ -75,9 +115,69 @@ export interface paths {
         put?: never;
         /**
          * Start OAuth sign-in
-         * @description Returns the provider's consent URL. There is no cloud-hosted callback page — the client opens this URL itself and intercepts the final redirect before it reaches the network.
+         * @description Returns the provider's consent URL, bound to a PKCE challenge whose verifier stays here. There is no cloud-hosted callback page — the client opens the URL in the system browser and catches the redirect on its own loopback listener.
          */
         post: operations["startOAuth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the password
+         * @description Replaces the password of the signed-in account and ends every session, this one included. The current password is required as well as the session: an unattended open session should not be enough to lock its owner out.
+         */
+        put: operations["changePassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a password reset
+         * @description Mails a reset code if the address belongs to an account that has a password. The response is identical either way — an endpoint that answered honestly would let anyone test an address list against the user base.
+         */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/account/password/reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set a new password with a reset code
+         * @description Exchanges a mailed code for a new password and ends every session the account holds, this one included — a reset is the answer to a compromise, and leaving the intruder signed in would defeat it.
+         */
+        post: operations["completePasswordReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -95,7 +195,7 @@ export interface paths {
         put?: never;
         /**
          * Create an account
-         * @description Registers an account and signs it in. The returned token is the session identifier; it is shown once and cannot be recovered.
+         * @description Registers an account and mails a confirmation code. The returned token is the session identifier; it is shown once and cannot be recovered. Until the code is spent the session is restricted: it reaches only this account's own profile, the confirmation endpoints and sign-out, and every other operation answers 403.
          */
         post: operations["registerAccount"];
         delete?: never;
@@ -115,7 +215,7 @@ export interface paths {
         put?: never;
         /**
          * Sign in
-         * @description Exchanges credentials for a session identifier. Repeated failures throttle the account, not the address they come from.
+         * @description Exchanges credentials for a session identifier. Failures are charged twice: to the account, which bounds guessing against one password, and to the calling address, which bounds the same guess sprayed across many accounts.
          */
         post: operations["createSession"];
         /**
@@ -148,26 +248,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/catalog/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Catalog module status
-         * @description Reports whether the catalog module is wired. Placeholder for phase 0.
-         */
-        get: operations["pingCatalog"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/health": {
         parameters: {
             query?: never;
@@ -188,70 +268,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/metadata/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Metadata module status
-         * @description Reports whether the metadata module is wired. Placeholder for phase 0.
-         */
-        get: operations["pingMetadata"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/moderation/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Moderation module status
-         * @description Reports whether the moderation module is wired. Placeholder for phase 0.
-         */
-        get: operations["pingModeration"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/social/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Social module status
-         * @description Reports whether the social module is wired. Placeholder for phase 0.
-         */
-        get: operations["pingSocial"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptedOutputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/AcceptedOutputBody.json
+             */
+            readonly $schema?: string;
+            /**
+             * Format: date-time
+             * @description When a code sent now stops being accepted. Present whether or not one was actually sent, so the answer cannot be used to tell which addresses have accounts.
+             */
+            expires_at: string;
+            /** @description Human-readable confirmation that the request was accepted. */
+            message: string;
+        };
+        Body: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/Body.json
+             */
+            readonly $schema?: string;
+            /**
+             * Format: date-time
+             * @description When the account was created.
+             */
+            created_at: string;
+            /** @description Name shown to other users. */
+            display_name: string;
+            /**
+             * Format: email
+             * @description The account's normalised address.
+             */
+            email: string;
+            /** @description Whether the address has been confirmed. */
+            email_verified: boolean;
+            /**
+             * Format: uuid
+             * @description Stable account identifier.
+             */
+            id: string;
+            /**
+             * @description Permission level.
+             * @enum {string}
+             */
+            role: "user" | "moderator" | "admin";
+        };
+        ChangePasswordInputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/ChangePasswordInputBody.json
+             */
+            readonly $schema?: string;
+            /** @description The password in use now. Required even though the session proves identity. */
+            current_password: string;
+            /** @description The replacement. Same rules as registration. */
+            new_password: string;
+        };
         ClientRequirements: {
             /**
              * @description Oldest client build allowed to use cloud features. Empty means no minimum is enforced.
@@ -268,6 +347,33 @@ export interface components {
              * @example https://mediary.example/download
              */
             update_url?: string;
+        };
+        CompletePasswordResetInputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/CompletePasswordResetInputBody.json
+             */
+            readonly $schema?: string;
+            /** @description The 6-digit code from the reset email. */
+            code: string;
+            /**
+             * Format: email
+             * @description The address the code was sent to.
+             */
+            email: string;
+            /** @description The new password. Same rules as registration. */
+            password: string;
+        };
+        ConfirmEmailInputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/ConfirmEmailInputBody.json
+             */
+            readonly $schema?: string;
+            /** @description The 6-digit code from the confirmation email. */
+            code: string;
         };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
@@ -383,6 +489,19 @@ export interface components {
             /** @description OAuth providers available on this deployment, e.g. ["google"]. */
             providers: string[] | null;
         };
+        OAuthStartInputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/OAuthStartInputBody.json
+             */
+            readonly $schema?: string;
+            /**
+             * Format: int64
+             * @description Loopback port the native client is listening on. The redirect is then aimed at http://127.0.0.1:<port>/oauth/callback. Omit it on deployments that use the provider's registered redirect URL instead.
+             */
+            callback_port?: number;
+        };
         OAuthStartOutputBody: {
             /**
              * Format: uri
@@ -392,66 +511,6 @@ export interface components {
             readonly $schema?: string;
             /** @description Open this in a browser to begin the provider's consent flow. */
             url: string;
-        };
-        PingOutputBody: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/PingOutputBody.json
-             */
-            readonly $schema?: string;
-            /**
-             * @description Module name.
-             * @example catalog
-             */
-            module: string;
-            /** @description True when the module's dependencies are wired. */
-            ready: boolean;
-        };
-        PingOutputBody1: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/PingOutputBody1.json
-             */
-            readonly $schema?: string;
-            /**
-             * @description Module name.
-             * @example metadata
-             */
-            module: string;
-            /** @description True when the module's dependencies are wired. */
-            ready: boolean;
-        };
-        PingOutputBody2: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/PingOutputBody2.json
-             */
-            readonly $schema?: string;
-            /**
-             * @description Module name.
-             * @example social
-             */
-            module: string;
-            /** @description True when the module's dependencies are wired. */
-            ready: boolean;
-        };
-        PingOutputBody3: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/PingOutputBody3.json
-             */
-            readonly $schema?: string;
-            /**
-             * @description Module name.
-             * @example moderation
-             */
-            module: string;
-            /** @description True when the module's dependencies are wired. */
-            ready: boolean;
         };
         RegisterInputBody: {
             /**
@@ -469,6 +528,19 @@ export interface components {
             email: string;
             /** @description At least 10 characters. No composition rules — length is what makes a password hard to guess. */
             password: string;
+        };
+        RequestPasswordResetInputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/RequestPasswordResetInputBody.json
+             */
+            readonly $schema?: string;
+            /**
+             * Format: email
+             * @description Address to send a reset code to.
+             */
+            email: string;
         };
         RevokedOutputBody: {
             /**
@@ -498,39 +570,7 @@ export interface components {
             /** @description Opaque session identifier. Send it as 'Authorization: Bearer <token>'. */
             token: string;
             /** @description The signed-in account. */
-            user: components["schemas"]["UserBody"];
-        };
-        UserBody: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/UserBody.json
-             */
-            readonly $schema?: string;
-            /**
-             * Format: date-time
-             * @description When the account was created.
-             */
-            created_at: string;
-            /** @description Name shown to other users. */
-            display_name: string;
-            /**
-             * Format: email
-             * @description The account's normalised address.
-             */
-            email: string;
-            /** @description Whether the address has been confirmed. */
-            email_verified: boolean;
-            /**
-             * Format: uuid
-             * @description Stable account identifier.
-             */
-            id: string;
-            /**
-             * @description Permission level.
-             * @enum {string}
-             */
-            role: "user" | "moderator" | "admin";
+            user: components["schemas"]["Body"];
         };
     };
     responses: never;
@@ -539,24 +579,142 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaAcceptedOutputBody = components['schemas']['AcceptedOutputBody'];
+export type SchemaBody = components['schemas']['Body'];
+export type SchemaChangePasswordInputBody = components['schemas']['ChangePasswordInputBody'];
 export type SchemaClientRequirements = components['schemas']['ClientRequirements'];
+export type SchemaCompletePasswordResetInputBody = components['schemas']['CompletePasswordResetInputBody'];
+export type SchemaConfirmEmailInputBody = components['schemas']['ConfirmEmailInputBody'];
 export type SchemaErrorDetail = components['schemas']['ErrorDetail'];
 export type SchemaErrorModel = components['schemas']['ErrorModel'];
 export type SchemaHealthOutputBody = components['schemas']['HealthOutputBody'];
 export type SchemaLoginInputBody = components['schemas']['LoginInputBody'];
 export type SchemaOAuthCallbackInputBody = components['schemas']['OAuthCallbackInputBody'];
 export type SchemaOAuthProvidersOutputBody = components['schemas']['OAuthProvidersOutputBody'];
+export type SchemaOAuthStartInputBody = components['schemas']['OAuthStartInputBody'];
 export type SchemaOAuthStartOutputBody = components['schemas']['OAuthStartOutputBody'];
-export type SchemaPingOutputBody = components['schemas']['PingOutputBody'];
-export type SchemaPingOutputBody1 = components['schemas']['PingOutputBody1'];
-export type SchemaPingOutputBody2 = components['schemas']['PingOutputBody2'];
-export type SchemaPingOutputBody3 = components['schemas']['PingOutputBody3'];
 export type SchemaRegisterInputBody = components['schemas']['RegisterInputBody'];
+export type SchemaRequestPasswordResetInputBody = components['schemas']['RequestPasswordResetInputBody'];
 export type SchemaRevokedOutputBody = components['schemas']['RevokedOutputBody'];
 export type SchemaSessionBody = components['schemas']['SessionBody'];
-export type SchemaUserBody = components['schemas']['UserBody'];
 export type $defs = Record<string, never>;
 export interface operations {
+    sendEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptedOutputBody"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    confirmEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmEmailInputBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Body"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     getCurrentAccount: {
         parameters: {
             query?: never;
@@ -572,7 +730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserBody"];
+                    "application/json": components["schemas"]["Body"];
                 };
             };
             /** @description Unauthorized */
@@ -718,7 +876,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OAuthStartInputBody"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -740,6 +902,191 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordInputBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPasswordResetInputBody"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptedOutputBody"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    completePasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompletePasswordResetInputBody"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -958,35 +1305,6 @@ export interface operations {
             };
         };
     };
-    pingCatalog: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PingOutputBody"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
     getHealth: {
         parameters: {
             query?: never;
@@ -1003,93 +1321,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthOutputBody"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    pingMetadata: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PingOutputBody1"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    pingModeration: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PingOutputBody3"];
-                };
-            };
-            /** @description Error */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    pingSocial: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PingOutputBody2"];
                 };
             };
             /** @description Error */
