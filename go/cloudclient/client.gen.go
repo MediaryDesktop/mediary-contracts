@@ -20,17 +20,14 @@ import (
 
 // Defines values for BodyRole.
 const (
-	Admin     BodyRole = "admin"
-	Moderator BodyRole = "moderator"
-	User      BodyRole = "user"
+	Admin BodyRole = "admin"
+	User  BodyRole = "user"
 )
 
 // Valid indicates whether the value is a known member of the BodyRole enum.
 func (e BodyRole) Valid() bool {
 	switch e {
 	case Admin:
-		return true
-	case Moderator:
 		return true
 	case User:
 		return true
