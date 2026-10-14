@@ -452,6 +452,16 @@ export interface components {
              */
             size_bytes: number;
         };
+        BackupListOutputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/BackupListOutputBody.json
+             */
+            readonly $schema?: string;
+            /** @description The account's snapshots, newest first. */
+            backups: components["schemas"]["BackupBody"][] | null;
+        };
         Body: {
             /**
              * Format: uri
@@ -564,6 +574,16 @@ export interface components {
              */
             last_seen_at: string;
         };
+        DeviceListOutputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example https://example.com/schemas/DeviceListOutputBody.json
+             */
+            readonly $schema?: string;
+            /** @description Live devices, oldest first. Revoked ones are not listed. */
+            devices: components["schemas"]["DeviceBody"][] | null;
+        };
         ErrorDetail: {
             /** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
             location?: string;
@@ -664,26 +684,6 @@ export interface components {
              * @example 0.1.0
              */
             version: string;
-        };
-        ListOutputBody: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/ListOutputBody.json
-             */
-            readonly $schema?: string;
-            /** @description Live devices, oldest first. Revoked ones are not listed. */
-            devices: components["schemas"]["DeviceBody"][] | null;
-        };
-        ListOutputBody1: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example https://example.com/schemas/ListOutputBody1.json
-             */
-            readonly $schema?: string;
-            /** @description The account's snapshots, newest first. */
-            backups: components["schemas"]["BackupBody"][] | null;
         };
         LoginInputBody: {
             /**
@@ -832,19 +832,19 @@ export interface components {
 }
 export type SchemaAcceptedOutputBody = components['schemas']['AcceptedOutputBody'];
 export type SchemaBackupBody = components['schemas']['BackupBody'];
+export type SchemaBackupListOutputBody = components['schemas']['BackupListOutputBody'];
 export type SchemaBody = components['schemas']['Body'];
 export type SchemaChangePasswordInputBody = components['schemas']['ChangePasswordInputBody'];
 export type SchemaClientRequirements = components['schemas']['ClientRequirements'];
 export type SchemaCompletePasswordResetInputBody = components['schemas']['CompletePasswordResetInputBody'];
 export type SchemaConfirmEmailInputBody = components['schemas']['ConfirmEmailInputBody'];
 export type SchemaDeviceBody = components['schemas']['DeviceBody'];
+export type SchemaDeviceListOutputBody = components['schemas']['DeviceListOutputBody'];
 export type SchemaErrorDetail = components['schemas']['ErrorDetail'];
 export type SchemaErrorModel = components['schemas']['ErrorModel'];
 export type SchemaExchangeInputBody = components['schemas']['ExchangeInputBody'];
 export type SchemaExchangeOutputBody = components['schemas']['ExchangeOutputBody'];
 export type SchemaHealthOutputBody = components['schemas']['HealthOutputBody'];
-export type SchemaListOutputBody = components['schemas']['ListOutputBody'];
-export type SchemaListOutputBody1 = components['schemas']['ListOutputBody1'];
 export type SchemaLoginInputBody = components['schemas']['LoginInputBody'];
 export type SchemaOAuthCallbackInputBody = components['schemas']['OAuthCallbackInputBody'];
 export type SchemaOAuthProvidersOutputBody = components['schemas']['OAuthProvidersOutputBody'];
@@ -872,7 +872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListOutputBody"];
+                    "application/json": components["schemas"]["DeviceListOutputBody"];
                 };
             };
             /** @description Unauthorized */
@@ -1747,7 +1747,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListOutputBody1"];
+                    "application/json": components["schemas"]["BackupListOutputBody"];
                 };
             };
             /** @description Unauthorized */

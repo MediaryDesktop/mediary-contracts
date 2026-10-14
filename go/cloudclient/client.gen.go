@@ -79,6 +79,17 @@ type BackupBody struct {
 	SizeBytes int64 `json:"size_bytes"`
 }
 
+// BackupListOutputBody defines model for BackupListOutputBody.
+type BackupListOutputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/BackupListOutputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Backups The account's snapshots, newest first.
+	Backups *[]BackupBody `json:"backups"`
+}
+
 // Body defines model for Body.
 type Body struct {
 	// Schema A URL to the JSON Schema for this object.
@@ -186,6 +197,17 @@ type DeviceBody struct {
 	LastSeenAt time.Time `json:"last_seen_at"`
 }
 
+// DeviceListOutputBody defines model for DeviceListOutputBody.
+type DeviceListOutputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/DeviceListOutputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Devices Live devices, oldest first. Revoked ones are not listed.
+	Devices *[]DeviceBody `json:"devices"`
+}
+
 // ErrorDetail defines model for ErrorDetail.
 type ErrorDetail struct {
 	// Location Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id'
@@ -291,28 +313,6 @@ type HealthOutputBody struct {
 	//
 	// Examples: 0.1.0
 	Version string `json:"version"`
-}
-
-// ListOutputBody defines model for ListOutputBody.
-type ListOutputBody struct {
-	// Schema A URL to the JSON Schema for this object.
-	//
-	// Examples: https://example.com/schemas/ListOutputBody.json
-	Schema *string `json:"$schema,omitempty"`
-
-	// Devices Live devices, oldest first. Revoked ones are not listed.
-	Devices *[]DeviceBody `json:"devices"`
-}
-
-// ListOutputBody1 defines model for ListOutputBody1.
-type ListOutputBody1 struct {
-	// Schema A URL to the JSON Schema for this object.
-	//
-	// Examples: https://example.com/schemas/ListOutputBody1.json
-	Schema *string `json:"$schema,omitempty"`
-
-	// Backups The account's snapshots, newest first.
-	Backups *[]BackupBody `json:"backups"`
 }
 
 // LoginInputBody defines model for LoginInputBody.
@@ -2540,7 +2540,7 @@ type ListDevicesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *ListOutputBody
+	JSON200 *DeviceListOutputBody
 	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
 	ApplicationproblemJSON401 *ErrorModel
 	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
@@ -2550,7 +2550,7 @@ type ListDevicesResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListDevicesResponse) GetJSON200() *ListOutputBody {
+func (r ListDevicesResponse) GetJSON200() *DeviceListOutputBody {
 	return r.JSON200
 }
 
@@ -3567,7 +3567,7 @@ type ListBackupsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *ListOutputBody1
+	JSON200 *BackupListOutputBody
 	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
 	ApplicationproblemJSON401 *ErrorModel
 	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
@@ -3577,7 +3577,7 @@ type ListBackupsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListBackupsResponse) GetJSON200() *ListOutputBody1 {
+func (r ListBackupsResponse) GetJSON200() *BackupListOutputBody {
 	return r.JSON200
 }
 
@@ -4465,7 +4465,7 @@ func ParseListDevicesResponse(rsp *http.Response) (*ListDevicesResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListOutputBody
+		var dest DeviceListOutputBody
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -5264,7 +5264,7 @@ func ParseListBackupsResponse(rsp *http.Response) (*ListBackupsResponse, error) 
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListOutputBody1
+		var dest BackupListOutputBody
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

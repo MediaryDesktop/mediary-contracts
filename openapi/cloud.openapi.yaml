@@ -66,6 +66,26 @@ components:
         - sha256
         - format_version
       type: object
+    BackupListOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/BackupListOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        backups:
+          description: The account's snapshots, newest first.
+          items:
+            $ref: "#/components/schemas/BackupBody"
+          type:
+            - array
+            - "null"
+      required:
+        - backups
+      type: object
     Body:
       additionalProperties: false
       properties:
@@ -225,6 +245,26 @@ components:
         - last_seen_at
         - expires_at
       type: object
+    DeviceListOutputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/DeviceListOutputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        devices:
+          description: Live devices, oldest first. Revoked ones are not listed.
+          items:
+            $ref: "#/components/schemas/DeviceBody"
+          type:
+            - array
+            - "null"
+      required:
+        - devices
+      type: object
     ErrorDetail:
       additionalProperties: false
       properties:
@@ -367,46 +407,6 @@ components:
         - commit
         - built
         - client
-      type: object
-    ListOutputBody:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/ListOutputBody.json
-          format: uri
-          readOnly: true
-          type: string
-        devices:
-          description: Live devices, oldest first. Revoked ones are not listed.
-          items:
-            $ref: "#/components/schemas/DeviceBody"
-          type:
-            - array
-            - "null"
-      required:
-        - devices
-      type: object
-    ListOutputBody1:
-      additionalProperties: false
-      properties:
-        $schema:
-          description: A URL to the JSON Schema for this object.
-          examples:
-            - https://example.com/schemas/ListOutputBody1.json
-          format: uri
-          readOnly: true
-          type: string
-        backups:
-          description: The account's snapshots, newest first.
-          items:
-            $ref: "#/components/schemas/BackupBody"
-          type:
-            - array
-            - "null"
-      required:
-        - backups
       type: object
     LoginInputBody:
       additionalProperties: false
@@ -642,7 +642,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListOutputBody"
+                $ref: "#/components/schemas/DeviceListOutputBody"
           description: OK
         "401":
           content:
@@ -1302,7 +1302,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListOutputBody1"
+                $ref: "#/components/schemas/BackupListOutputBody"
           description: OK
         "401":
           content:
