@@ -1332,6 +1332,12 @@ paths:
       description: Stores the body as an opaque blob. If it has the same hash as this device's newest snapshot, nothing is written and that snapshot is returned with 200, so a node may upload on a schedule at no cost. Otherwise one upload per device per interval; the account keeps its newest snapshots and the newest of every live device.
       operationId: uploadBackup
       parameters:
+        - description: mediary-node/<version>. Checked against the deployment's minimum client version.
+          in: header
+          name: User-Agent
+          schema:
+            description: mediary-node/<version>. Checked against the deployment's minimum client version.
+            type: string
         - description: Lowercase hex SHA-256 of the body. A body that does not match is refused.
           in: header
           name: X-Backup-Sha256
@@ -1388,6 +1394,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorModel"
           description: Unprocessable Entity
+        "426":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Upgrade Required
         "429":
           content:
             application/problem+json:

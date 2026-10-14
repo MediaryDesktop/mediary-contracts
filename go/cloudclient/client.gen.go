@@ -468,6 +468,9 @@ type CreateSessionParams struct {
 
 // UploadBackupParams defines parameters for UploadBackup.
 type UploadBackupParams struct {
+	// UserAgent mediary-node/<version>. Checked against the deployment's minimum client version.
+	UserAgent *string `json:"User-Agent,omitempty"`
+
 	// XBackupSha256 Lowercase hex SHA-256 of the body. A body that does not match is refused.
 	XBackupSha256 string `json:"X-Backup-Sha256"`
 
@@ -2054,23 +2057,34 @@ func NewUploadBackupRequestWithBody(server string, params *UploadBackupParams, c
 
 	if params != nil {
 
-		var headerParam0 string
+		if params.UserAgent != nil {
+			var headerParam0 string
 
-		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Backup-Sha256", params.XBackupSha256, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
-		if err != nil {
-			return nil, err
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "User-Agent", *params.UserAgent, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("User-Agent", headerParam0)
 		}
-
-		req.Header.Set("X-Backup-Sha256", headerParam0)
 
 		var headerParam1 string
 
-		headerParam1, err = runtime.StyleParamWithOptions("simple", false, "X-Backup-Format-Version", params.XBackupFormatVersion, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: "int32"})
+		headerParam1, err = runtime.StyleParamWithOptions("simple", false, "X-Backup-Sha256", params.XBackupSha256, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
 		if err != nil {
 			return nil, err
 		}
 
-		req.Header.Set("X-Backup-Format-Version", headerParam1)
+		req.Header.Set("X-Backup-Sha256", headerParam1)
+
+		var headerParam2 string
+
+		headerParam2, err = runtime.StyleParamWithOptions("simple", false, "X-Backup-Format-Version", params.XBackupFormatVersion, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: "int32"})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Backup-Format-Version", headerParam2)
 
 	}
 
@@ -3638,6 +3652,8 @@ type UploadBackupResponse struct {
 	ApplicationproblemJSON413 *ErrorModel
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
 	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON426 the response for an HTTP 426 `application/problem+json` response
+	ApplicationproblemJSON426 *ErrorModel
 	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
 	ApplicationproblemJSON429 *ErrorModel
 	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
@@ -3669,6 +3685,11 @@ func (r UploadBackupResponse) GetApplicationproblemJSON413() *ErrorModel {
 // GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
 func (r UploadBackupResponse) GetApplicationproblemJSON422() *ErrorModel {
 	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON426 returns the response for an HTTP 426 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON426() *ErrorModel {
+	return r.ApplicationproblemJSON426
 }
 
 // GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
@@ -5344,6 +5365,13 @@ func ParseUploadBackupResponse(rsp *http.Response) (*UploadBackupResponse, error
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 426:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON426 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
 		var dest ErrorModel
