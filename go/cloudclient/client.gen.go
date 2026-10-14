@@ -50,6 +50,35 @@ type AcceptedOutputBody struct {
 	Message string `json:"message"`
 }
 
+// BackupBody defines model for BackupBody.
+type BackupBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/BackupBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// CreatedAt When the snapshot was uploaded.
+	CreatedAt time.Time `json:"created_at"`
+
+	// DeviceId The device that uploaded it.
+	DeviceId openapi_types.UUID `json:"device_id"`
+
+	// DeviceLabel That device's name, so a list can say where a snapshot came from.
+	DeviceLabel string `json:"device_label"`
+
+	// FormatVersion The node's snapshot format version. The cloud stores it without interpreting it.
+	FormatVersion int64 `json:"format_version"`
+
+	// Id Stable snapshot identifier.
+	Id openapi_types.UUID `json:"id"`
+
+	// Sha256 Hex SHA-256 of the body.
+	Sha256 string `json:"sha256"`
+
+	// SizeBytes Size of the stored body, compressed as the node sent it.
+	SizeBytes int64 `json:"size_bytes"`
+}
+
 // Body defines model for Body.
 type Body struct {
 	// Schema A URL to the JSON Schema for this object.
@@ -139,6 +168,24 @@ type ConfirmEmailInputBody struct {
 	Code string `json:"code"`
 }
 
+// DeviceBody defines model for DeviceBody.
+type DeviceBody struct {
+	// CreatedAt When the device was paired.
+	CreatedAt time.Time `json:"created_at"`
+
+	// ExpiresAt When the token stops working and the node has to be paired again.
+	ExpiresAt time.Time `json:"expires_at"`
+
+	// Id Stable device identifier.
+	Id openapi_types.UUID `json:"id"`
+
+	// Label Name the node gave itself when paired, usually its hostname.
+	Label string `json:"label"`
+
+	// LastSeenAt Last time the device used its token, to about a minute.
+	LastSeenAt time.Time `json:"last_seen_at"`
+}
+
 // ErrorDetail defines model for ErrorDetail.
 type ErrorDetail struct {
 	// Location Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id'
@@ -187,6 +234,34 @@ type ErrorModel struct {
 	Type *string `json:"type,omitempty"`
 }
 
+// ExchangeInputBody defines model for ExchangeInputBody.
+type ExchangeInputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/ExchangeInputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Code The pairing code shown in the desktop app.
+	Code string `json:"code"`
+
+	// Label How the node names itself in the device list, usually its hostname.
+	Label string `json:"label"`
+}
+
+// ExchangeOutputBody defines model for ExchangeOutputBody.
+type ExchangeOutputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/ExchangeOutputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Device The new device.
+	Device DeviceBody `json:"device"`
+
+	// DeviceToken Send as X-Mediary-Device-Token. Shown once and never again: only its hash is stored.
+	DeviceToken string `json:"device_token"`
+}
+
 // HealthOutputBody defines model for HealthOutputBody.
 type HealthOutputBody struct {
 	// Schema A URL to the JSON Schema for this object.
@@ -216,6 +291,28 @@ type HealthOutputBody struct {
 	//
 	// Examples: 0.1.0
 	Version string `json:"version"`
+}
+
+// ListOutputBody defines model for ListOutputBody.
+type ListOutputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/ListOutputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Devices Live devices, oldest first. Revoked ones are not listed.
+	Devices *[]DeviceBody `json:"devices"`
+}
+
+// ListOutputBody1 defines model for ListOutputBody1.
+type ListOutputBody1 struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/ListOutputBody1.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Backups The account's snapshots, newest first.
+	Backups *[]BackupBody `json:"backups"`
 }
 
 // LoginInputBody defines model for LoginInputBody.
@@ -277,6 +374,22 @@ type OAuthStartOutputBody struct {
 
 	// Url Open this in a browser to begin the provider's consent flow.
 	Url string `json:"url"`
+}
+
+// PairingCodeOutputBody defines model for PairingCodeOutputBody.
+type PairingCodeOutputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/PairingCodeOutputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Code One-time code for the node to exchange. Case and the dash do not matter.
+	//
+	// Examples: K7QM-4XPA
+	Code string `json:"code"`
+
+	// ExpiresAt After this the code is refused.
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 // RegisterInputBody defines model for RegisterInputBody.
@@ -353,6 +466,15 @@ type CreateSessionParams struct {
 	UserAgent *string `json:"User-Agent,omitempty"`
 }
 
+// UploadBackupParams defines parameters for UploadBackup.
+type UploadBackupParams struct {
+	// XBackupSha256 Lowercase hex SHA-256 of the body. A body that does not match is refused.
+	XBackupSha256 string `json:"X-Backup-Sha256"`
+
+	// XBackupFormatVersion The node's snapshot format version.
+	XBackupFormatVersion int32 `json:"X-Backup-Format-Version"`
+}
+
 // ConfirmEmailJSONRequestBody defines body for ConfirmEmail for application/json ContentType.
 type ConfirmEmailJSONRequestBody = ConfirmEmailInputBody
 
@@ -376,6 +498,9 @@ type RegisterAccountJSONRequestBody = RegisterInputBody
 
 // CreateSessionJSONRequestBody defines body for CreateSession for application/json ContentType.
 type CreateSessionJSONRequestBody = LoginInputBody
+
+// ExchangePairingCodeJSONRequestBody defines body for ExchangePairingCode for application/json ContentType.
+type ExchangePairingCodeJSONRequestBody = ExchangeInputBody
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -450,6 +575,27 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+
+	// ListDevices Paired devices
+	//
+	// Lists the account's live devices. Tokens are never part of the answer.
+	//
+	// Corresponds with GET /v1/account/devices (the `ListDevices` operationId).
+	ListDevices(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreatePairingCode Start pairing a node
+	//
+	// Issues a short one-time code the desktop hands to its node. The node trades it for a device token at /v1/devices/exchange. The code is single-use and short-lived; asking for another does not cancel the first.
+	//
+	// Corresponds with POST /v1/account/devices/pairing-codes (the `CreatePairingCode` operationId).
+	CreatePairingCode(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeDevice Revoke a device
+	//
+	// Ends a device's token at once. Its backups stay; the node has to be paired again to upload more.
+	//
+	// Corresponds with DELETE /v1/account/devices/{id} (the `RevokeDevice` operationId).
+	RevokeDevice(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SendEmailVerification Send a confirmation code
 	//
@@ -630,12 +776,111 @@ type ClientInterface interface {
 	// Corresponds with DELETE /v1/account/sessions/current (the `DeleteCurrentSession` operationId).
 	DeleteCurrentSession(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListBackups List snapshots
+	//
+	// The account's snapshots, newest first, from every device.
+	//
+	// Corresponds with GET /v1/backups (the `ListBackups` operationId).
+	ListBackups(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UploadBackupWithBody Upload a snapshot
+	//
+	// Stores the body as an opaque blob. If it has the same hash as this device's newest snapshot, nothing is written and that snapshot is returned with 200, so a node may upload on a schedule at no cost. Otherwise one upload per device per interval; the account keeps its newest snapshots and the newest of every live device.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /v1/backups (the `UploadBackup` operationId).
+	UploadBackupWithBody(ctx context.Context, params *UploadBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteBackup Delete a snapshot
+	//
+	// Signed-in users only: a device may add history but not erase it.
+	//
+	// Corresponds with DELETE /v1/backups/{id} (the `DeleteBackup` operationId).
+	DeleteBackup(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadBackup Download a snapshot
+	//
+	// Streams the body exactly as it was uploaded, with its hash and format version in the X-Backup-Sha256 and X-Backup-Format-Version headers.
+	//
+	// Corresponds with GET /v1/backups/{id} (the `DownloadBackup` operationId).
+	DownloadBackup(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ExchangePairingCodeWithBody Pair a node
+	//
+	// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+	ExchangePairingCodeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ExchangePairingCode Pair a node
+	//
+	// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+	ExchangePairingCode(ctx context.Context, body ExchangePairingCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetHealth Service health
 	//
 	// Reports liveness and the build the process is running.
 	//
 	// Corresponds with GET /v1/health (the `GetHealth` operationId).
 	GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+// ListDevices Paired devices
+//
+// Lists the account's live devices. Tokens are never part of the answer.
+//
+// Corresponds with GET /v1/account/devices (the `ListDevices` operationId).
+func (c *Client) ListDevices(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDevicesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreatePairingCode Start pairing a node
+//
+// Issues a short one-time code the desktop hands to its node. The node trades it for a device token at /v1/devices/exchange. The code is single-use and short-lived; asking for another does not cancel the first.
+//
+// Corresponds with POST /v1/account/devices/pairing-codes (the `CreatePairingCode` operationId).
+func (c *Client) CreatePairingCode(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePairingCodeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeDevice Revoke a device
+//
+// Ends a device's token at once. Its backups stay; the node has to be paired again to upload more.
+//
+// Corresponds with DELETE /v1/account/devices/{id} (the `RevokeDevice` operationId).
+func (c *Client) RevokeDevice(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeDeviceRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 // SendEmailVerification Send a confirmation code
@@ -1027,6 +1272,114 @@ func (c *Client) DeleteCurrentSession(ctx context.Context, reqEditors ...Request
 	return c.Client.Do(req)
 }
 
+// ListBackups List snapshots
+//
+// The account's snapshots, newest first, from every device.
+//
+// Corresponds with GET /v1/backups (the `ListBackups` operationId).
+func (c *Client) ListBackups(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBackupsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UploadBackupWithBody Upload a snapshot
+//
+// Stores the body as an opaque blob. If it has the same hash as this device's newest snapshot, nothing is written and that snapshot is returned with 200, so a node may upload on a schedule at no cost. Otherwise one upload per device per interval; the account keeps its newest snapshots and the newest of every live device.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /v1/backups (the `UploadBackup` operationId).
+func (c *Client) UploadBackupWithBody(ctx context.Context, params *UploadBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadBackupRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteBackup Delete a snapshot
+//
+// Signed-in users only: a device may add history but not erase it.
+//
+// Corresponds with DELETE /v1/backups/{id} (the `DeleteBackup` operationId).
+func (c *Client) DeleteBackup(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteBackupRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DownloadBackup Download a snapshot
+//
+// Streams the body exactly as it was uploaded, with its hash and format version in the X-Backup-Sha256 and X-Backup-Format-Version headers.
+//
+// Corresponds with GET /v1/backups/{id} (the `DownloadBackup` operationId).
+func (c *Client) DownloadBackup(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadBackupRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ExchangePairingCodeWithBody Pair a node
+//
+// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+func (c *Client) ExchangePairingCodeWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExchangePairingCodeRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ExchangePairingCode Pair a node
+//
+// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+func (c *Client) ExchangePairingCode(ctx context.Context, body ExchangePairingCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewExchangePairingCodeRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetHealth Service health
 //
 // Reports liveness and the build the process is running.
@@ -1042,6 +1395,94 @@ func (c *Client) GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewListDevicesRequest constructs an http.Request for the ListDevices method
+func NewListDevicesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/account/devices")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreatePairingCodeRequest constructs an http.Request for the CreatePairingCode method
+func NewCreatePairingCodeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/account/devices/pairing-codes")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRevokeDeviceRequest constructs an http.Request for the RevokeDevice method
+func NewRevokeDeviceRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/account/devices/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewSendEmailVerificationRequest constructs an http.Request for the SendEmailVerification method
@@ -1558,6 +1999,192 @@ func NewDeleteCurrentSessionRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListBackupsRequest constructs an http.Request for the ListBackups method
+func NewListBackupsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/backups")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUploadBackupRequestWithBody constructs an http.Request for the UploadBackup method, with any body, and a specified content type
+func NewUploadBackupRequestWithBody(server string, params *UploadBackupParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/backups")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Backup-Sha256", params.XBackupSha256, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Backup-Sha256", headerParam0)
+
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithOptions("simple", false, "X-Backup-Format-Version", params.XBackupFormatVersion, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "integer", Format: "int32"})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Backup-Format-Version", headerParam1)
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteBackupRequest constructs an http.Request for the DeleteBackup method
+func NewDeleteBackupRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/backups/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDownloadBackupRequest constructs an http.Request for the DownloadBackup method
+func NewDownloadBackupRequest(server string, id openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/backups/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewExchangePairingCodeRequest calls the generic ExchangePairingCode builder with application/json body
+func NewExchangePairingCodeRequest(server string, body ExchangePairingCodeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewExchangePairingCodeRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewExchangePairingCodeRequestWithBody constructs an http.Request for the ExchangePairingCode method, with any body, and a specified content type
+func NewExchangePairingCodeRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/devices/exchange")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetHealthRequest constructs an http.Request for the GetHealth method
 func NewGetHealthRequest(server string) (*http.Request, error) {
 	var err error
@@ -1628,6 +2255,33 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+
+	// ListDevicesWithResponse Paired devices
+	//
+	// Lists the account's live devices. Tokens are never part of the answer.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /v1/account/devices (the `ListDevices` operationId).
+	ListDevicesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDevicesResponse, error)
+
+	// CreatePairingCodeWithResponse Start pairing a node
+	//
+	// Issues a short one-time code the desktop hands to its node. The node trades it for a device token at /v1/devices/exchange. The code is single-use and short-lived; asking for another does not cancel the first.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/account/devices/pairing-codes (the `CreatePairingCode` operationId).
+	CreatePairingCodeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CreatePairingCodeResponse, error)
+
+	// RevokeDeviceWithResponse Revoke a device
+	//
+	// Ends a device's token at once. Its backups stay; the node has to be paired again to upload more.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /v1/account/devices/{id} (the `RevokeDevice` operationId).
+	RevokeDeviceWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*RevokeDeviceResponse, error)
 
 	// SendEmailVerificationWithResponse Send a confirmation code
 	//
@@ -1818,6 +2472,60 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /v1/account/sessions/current (the `DeleteCurrentSession` operationId).
 	DeleteCurrentSessionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*DeleteCurrentSessionResponse, error)
 
+	// ListBackupsWithResponse List snapshots
+	//
+	// The account's snapshots, newest first, from every device.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /v1/backups (the `ListBackups` operationId).
+	ListBackupsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListBackupsResponse, error)
+
+	// UploadBackupWithBodyWithResponse Upload a snapshot
+	//
+	// Stores the body as an opaque blob. If it has the same hash as this device's newest snapshot, nothing is written and that snapshot is returned with 200, so a node may upload on a schedule at no cost. Otherwise one upload per device per interval; the account keeps its newest snapshots and the newest of every live device.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/backups (the `UploadBackup` operationId).
+	UploadBackupWithBodyWithResponse(ctx context.Context, params *UploadBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadBackupResponse, error)
+
+	// DeleteBackupWithResponse Delete a snapshot
+	//
+	// Signed-in users only: a device may add history but not erase it.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /v1/backups/{id} (the `DeleteBackup` operationId).
+	DeleteBackupWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteBackupResponse, error)
+
+	// DownloadBackupWithResponse Download a snapshot
+	//
+	// Streams the body exactly as it was uploaded, with its hash and format version in the X-Backup-Sha256 and X-Backup-Format-Version headers.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /v1/backups/{id} (the `DownloadBackup` operationId).
+	DownloadBackupWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadBackupResponse, error)
+
+	// ExchangePairingCodeWithBodyWithResponse Pair a node
+	//
+	// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+	ExchangePairingCodeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ExchangePairingCodeResponse, error)
+
+	// ExchangePairingCodeWithResponse Pair a node
+	//
+	// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+	ExchangePairingCodeWithResponse(ctx context.Context, body ExchangePairingCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*ExchangePairingCodeResponse, error)
+
 	// GetHealthWithResponse Service health
 	//
 	// Reports liveness and the build the process is running.
@@ -1826,6 +2534,206 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /v1/health (the `GetHealth` operationId).
 	GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error)
+}
+
+type ListDevicesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ListOutputBody
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListDevicesResponse) GetJSON200() *ListOutputBody {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListDevicesResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListDevicesResponse) GetApplicationproblemJSON403() *ErrorModel {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListDevicesResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListDevicesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDevicesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDevicesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDevicesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreatePairingCodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *PairingCodeOutputBody
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *ErrorModel
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreatePairingCodeResponse) GetJSON201() *PairingCodeOutputBody {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r CreatePairingCodeResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CreatePairingCodeResponse) GetApplicationproblemJSON403() *ErrorModel {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r CreatePairingCodeResponse) GetApplicationproblemJSON429() *ErrorModel {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r CreatePairingCodeResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CreatePairingCodeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreatePairingCodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreatePairingCodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreatePairingCodeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RevokeDeviceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *ErrorModel
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *ErrorModel
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RevokeDeviceResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RevokeDeviceResponse) GetApplicationproblemJSON403() *ErrorModel {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RevokeDeviceResponse) GetApplicationproblemJSON404() *ErrorModel {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RevokeDeviceResponse) GetApplicationproblemJSON422() *ErrorModel {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RevokeDeviceResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokeDeviceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeDeviceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeDeviceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeDeviceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
 }
 
 type SendEmailVerificationResponse struct {
@@ -2655,6 +3563,380 @@ func (r DeleteCurrentSessionResponse) ContentType() string {
 	return ""
 }
 
+type ListBackupsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ListOutputBody1
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListBackupsResponse) GetJSON200() *ListOutputBody1 {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListBackupsResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListBackupsResponse) GetApplicationproblemJSON403() *ErrorModel {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListBackupsResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListBackupsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBackupsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBackupsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListBackupsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UploadBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *BackupBody
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *BackupBody
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON413 the response for an HTTP 413 `application/problem+json` response
+	ApplicationproblemJSON413 *ErrorModel
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *ErrorModel
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UploadBackupResponse) GetJSON200() *BackupBody {
+	return r.JSON200
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r UploadBackupResponse) GetJSON201() *BackupBody {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON413 returns the response for an HTTP 413 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON413() *ErrorModel {
+	return r.ApplicationproblemJSON413
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON422() *ErrorModel {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON429() *ErrorModel {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r UploadBackupResponse) GetApplicationproblemJSON502() *ErrorModel {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r UploadBackupResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UploadBackupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *ErrorModel
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *ErrorModel
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteBackupResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteBackupResponse) GetApplicationproblemJSON403() *ErrorModel {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteBackupResponse) GetApplicationproblemJSON404() *ErrorModel {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r DeleteBackupResponse) GetApplicationproblemJSON422() *ErrorModel {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteBackupResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteBackupResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteBackupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DownloadBackupResponse200Headers the declared response headers of an HTTP 200 response for DownloadBackup
+type DownloadBackupResponse200Headers struct {
+	XBackupFormatVersion *int
+	XBackupSha256        *string
+}
+
+type DownloadBackupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *ErrorModel
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *ErrorModel
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *ErrorModel
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DownloadBackupResponse200Headers
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DownloadBackupResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DownloadBackupResponse) GetApplicationproblemJSON403() *ErrorModel {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DownloadBackupResponse) GetApplicationproblemJSON404() *ErrorModel {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r DownloadBackupResponse) GetApplicationproblemJSON422() *ErrorModel {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DownloadBackupResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r DownloadBackupResponse) GetApplicationproblemJSON502() *ErrorModel {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r DownloadBackupResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadBackupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadBackupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DownloadBackupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ExchangePairingCodeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *ExchangeOutputBody
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r ExchangePairingCodeResponse) GetJSON201() *ExchangeOutputBody {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ExchangePairingCodeResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ExchangePairingCodeResponse) GetApplicationproblemJSON422() *ErrorModel {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r ExchangePairingCodeResponse) GetApplicationproblemJSON429() *ErrorModel {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ExchangePairingCodeResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ExchangePairingCodeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ExchangePairingCodeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ExchangePairingCodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ExchangePairingCodeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetHealthResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2701,6 +3983,51 @@ func (r GetHealthResponse) ContentType() string {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
 	return ""
+}
+
+// ListDevicesWithResponse Paired devices
+//
+// Lists the account's live devices. Tokens are never part of the answer.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /v1/account/devices (the `ListDevices` operationId).
+func (c *ClientWithResponses) ListDevicesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDevicesResponse, error) {
+	rsp, err := c.ListDevices(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDevicesResponse(rsp)
+}
+
+// CreatePairingCodeWithResponse Start pairing a node
+//
+// Issues a short one-time code the desktop hands to its node. The node trades it for a device token at /v1/devices/exchange. The code is single-use and short-lived; asking for another does not cancel the first.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/account/devices/pairing-codes (the `CreatePairingCode` operationId).
+func (c *ClientWithResponses) CreatePairingCodeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CreatePairingCodeResponse, error) {
+	rsp, err := c.CreatePairingCode(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePairingCodeResponse(rsp)
+}
+
+// RevokeDeviceWithResponse Revoke a device
+//
+// Ends a device's token at once. Its backups stay; the node has to be paired again to upload more.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /v1/account/devices/{id} (the `RevokeDevice` operationId).
+func (c *ClientWithResponses) RevokeDeviceWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*RevokeDeviceResponse, error) {
+	rsp, err := c.RevokeDevice(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeDeviceResponse(rsp)
 }
 
 // SendEmailVerificationWithResponse Send a confirmation code
@@ -3018,6 +4345,96 @@ func (c *ClientWithResponses) DeleteCurrentSessionWithResponse(ctx context.Conte
 	return ParseDeleteCurrentSessionResponse(rsp)
 }
 
+// ListBackupsWithResponse List snapshots
+//
+// The account's snapshots, newest first, from every device.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /v1/backups (the `ListBackups` operationId).
+func (c *ClientWithResponses) ListBackupsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListBackupsResponse, error) {
+	rsp, err := c.ListBackups(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBackupsResponse(rsp)
+}
+
+// UploadBackupWithBodyWithResponse Upload a snapshot
+//
+// Stores the body as an opaque blob. If it has the same hash as this device's newest snapshot, nothing is written and that snapshot is returned with 200, so a node may upload on a schedule at no cost. Otherwise one upload per device per interval; the account keeps its newest snapshots and the newest of every live device.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/backups (the `UploadBackup` operationId).
+func (c *ClientWithResponses) UploadBackupWithBodyWithResponse(ctx context.Context, params *UploadBackupParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadBackupResponse, error) {
+	rsp, err := c.UploadBackupWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadBackupResponse(rsp)
+}
+
+// DeleteBackupWithResponse Delete a snapshot
+//
+// Signed-in users only: a device may add history but not erase it.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /v1/backups/{id} (the `DeleteBackup` operationId).
+func (c *ClientWithResponses) DeleteBackupWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteBackupResponse, error) {
+	rsp, err := c.DeleteBackup(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteBackupResponse(rsp)
+}
+
+// DownloadBackupWithResponse Download a snapshot
+//
+// Streams the body exactly as it was uploaded, with its hash and format version in the X-Backup-Sha256 and X-Backup-Format-Version headers.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /v1/backups/{id} (the `DownloadBackup` operationId).
+func (c *ClientWithResponses) DownloadBackupWithResponse(ctx context.Context, id openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadBackupResponse, error) {
+	rsp, err := c.DownloadBackup(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadBackupResponse(rsp)
+}
+
+// ExchangePairingCodeWithBodyWithResponse Pair a node
+//
+// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+func (c *ClientWithResponses) ExchangePairingCodeWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ExchangePairingCodeResponse, error) {
+	rsp, err := c.ExchangePairingCodeWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExchangePairingCodeResponse(rsp)
+}
+
+// ExchangePairingCodeWithResponse Pair a node
+//
+// Trades a pairing code for a device token. Unauthenticated by necessity — the node has no credential yet — so the code is the whole proof, and attempts are limited per address.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/devices/exchange (the `ExchangePairingCode` operationId).
+func (c *ClientWithResponses) ExchangePairingCodeWithResponse(ctx context.Context, body ExchangePairingCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*ExchangePairingCodeResponse, error) {
+	rsp, err := c.ExchangePairingCode(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseExchangePairingCodeResponse(rsp)
+}
+
 // GetHealthWithResponse Service health
 //
 // Reports liveness and the build the process is running.
@@ -3031,6 +4448,164 @@ func (c *ClientWithResponses) GetHealthWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseGetHealthResponse(rsp)
+}
+
+// ParseListDevicesResponse parses an HTTP response from a ListDevicesWithResponse call
+func ParseListDevicesResponse(rsp *http.Response) (*ListDevicesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDevicesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListOutputBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreatePairingCodeResponse parses an HTTP response from a CreatePairingCodeWithResponse call
+func ParseCreatePairingCodeResponse(rsp *http.Response) (*CreatePairingCodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreatePairingCodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest PairingCodeOutputBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRevokeDeviceResponse parses an HTTP response from a RevokeDeviceWithResponse call
+func ParseRevokeDeviceResponse(rsp *http.Response) (*RevokeDeviceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeDeviceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseSendEmailVerificationResponse parses an HTTP response from a SendEmailVerificationWithResponse call
@@ -3661,6 +5236,320 @@ func ParseDeleteCurrentSessionResponse(rsp *http.Response) (*DeleteCurrentSessio
 			return nil, err
 		}
 		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListBackupsResponse parses an HTTP response from a ListBackupsWithResponse call
+func ParseListBackupsResponse(rsp *http.Response) (*ListBackupsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBackupsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListOutputBody1
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUploadBackupResponse parses an HTTP response from a UploadBackupWithResponse call
+func ParseUploadBackupResponse(rsp *http.Response) (*UploadBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BackupBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest BackupBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteBackupResponse parses an HTTP response from a DeleteBackupWithResponse call
+func ParseDeleteBackupResponse(rsp *http.Response) (*DeleteBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadBackupResponse parses an HTTP response from a DownloadBackupWithResponse call
+func ParseDownloadBackupResponse(rsp *http.Response) (*DownloadBackupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadBackupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers DownloadBackupResponse200Headers
+		if values := rsp.Header.Values("X-Backup-Format-Version"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "X-Backup-Format-Version", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.XBackupFormatVersion = &value
+		}
+		if values := rsp.Header.Values("X-Backup-Sha256"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "X-Backup-Sha256", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.XBackupSha256 = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseExchangePairingCodeResponse parses an HTTP response from a ExchangePairingCodeWithResponse call
+func ParseExchangePairingCodeResponse(rsp *http.Response) (*ExchangePairingCodeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ExchangePairingCodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ExchangeOutputBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest ErrorModel
