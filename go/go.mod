@@ -1,4 +1,4 @@
-module github.com/mediaryorg/mediary-contracts/go
+module github.com/MediaryDesktop/mediary-contracts/go
 
 go 1.27
 

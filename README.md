@@ -35,7 +35,7 @@ node scripts/sync-contracts.mjs
 
 | Шлях | Пакет | Споживач |
 |---|---|---|
-| `go/` | `github.com/mediaryorg/mediary-contracts/go` | нода (`mediary-node/server`) |
+| `go/` | `github.com/MediaryDesktop/mediary-contracts/go` | нода (`mediary-node/server`) |
 | `ts/` | `@mediaryorg/mediary-contracts` | десктоп-UI (`mediary-node/desktop`) |
 
 Go-дистрибутив містить **лише клієнт і моделі**, без серверних заглушок: сервер

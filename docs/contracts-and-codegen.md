@@ -46,7 +46,7 @@ mediary-contracts                        публічний
         │  тег go/vX.Y.Z + npm publish
         ▼
 
-mediary-node/server     go get github.com/mediaryorg/mediary-contracts/go@vX.Y.Z
+mediary-node/server     go get github.com/MediaryDesktop/mediary-contracts/go@vX.Y.Z
 mediary-node/desktop    npm i @mediaryorg/mediary-contracts@X.Y.Z
 ```
 
@@ -234,7 +234,7 @@ node scripts/sync-contracts.mjs
 **3. `mediary-node`** — підняти залежність:
 
 ```bash
-cd server  && go get github.com/mediaryorg/mediary-contracts/go@vX.Y.Z
+cd server  && go get github.com/MediaryDesktop/mediary-contracts/go@vX.Y.Z
 cd desktop && npm i @mediaryorg/mediary-contracts@X.Y.Z
 ```
 
