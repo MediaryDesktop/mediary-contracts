@@ -179,6 +179,17 @@ type ConfirmEmailInputBody struct {
 	Code string `json:"code"`
 }
 
+// DeleteAccountInputBody defines model for DeleteAccountInputBody.
+type DeleteAccountInputBody struct {
+	// Schema A URL to the JSON Schema for this object.
+	//
+	// Examples: https://example.com/schemas/DeleteAccountInputBody.json
+	Schema *string `json:"$schema,omitempty"`
+
+	// Code The 6-digit code from the account deletion email.
+	Code string `json:"code"`
+}
+
 // DeviceBody defines model for DeviceBody.
 type DeviceBody struct {
 	// CreatedAt When the device was paired.
@@ -535,6 +546,9 @@ type UploadBackupParams struct {
 	XBackupFormatVersion int32 `json:"X-Backup-Format-Version"`
 }
 
+// DeleteAccountJSONRequestBody defines body for DeleteAccount for application/json ContentType.
+type DeleteAccountJSONRequestBody = DeleteAccountInputBody
+
 // ConfirmEmailJSONRequestBody defines body for ConfirmEmail for application/json ContentType.
 type ConfirmEmailJSONRequestBody = ConfirmEmailInputBody
 
@@ -638,6 +652,31 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+
+	// RequestAccountDeletion Ask to delete the account
+	//
+	// Mails the signed-in account a code that confirms deleting it. The session alone is not enough: one left open, or stolen, must not be able to erase everything its owner stored. A code rather than the password, so an account that signed up through a provider can be deleted too.
+	//
+	// Corresponds with POST /v1/account/deletion (the `RequestAccountDeletion` operationId).
+	RequestAccountDeletion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAccountWithBody Delete the account with the mailed code
+	//
+	// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+	DeleteAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAccount Delete the account with the mailed code
+	//
+	// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+	DeleteAccount(ctx context.Context, body DeleteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListDevices Paired devices
 	//
@@ -918,6 +957,61 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /v1/health (the `GetHealth` operationId).
 	GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+// RequestAccountDeletion Ask to delete the account
+//
+// Mails the signed-in account a code that confirms deleting it. The session alone is not enough: one left open, or stolen, must not be able to erase everything its owner stored. A code rather than the password, so an account that signed up through a provider can be deleted too.
+//
+// Corresponds with POST /v1/account/deletion (the `RequestAccountDeletion` operationId).
+func (c *Client) RequestAccountDeletion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRequestAccountDeletionRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAccountWithBody Delete the account with the mailed code
+//
+// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+func (c *Client) DeleteAccountWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAccountRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAccount Delete the account with the mailed code
+//
+// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+func (c *Client) DeleteAccount(ctx context.Context, body DeleteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAccountRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 // ListDevices Paired devices
@@ -1538,6 +1632,73 @@ func (c *Client) GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewRequestAccountDeletionRequest constructs an http.Request for the RequestAccountDeletion method
+func NewRequestAccountDeletionRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/account/deletion")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteAccountRequest calls the generic DeleteAccount builder with application/json body
+func NewDeleteAccountRequest(server string, body DeleteAccountJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeleteAccountRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDeleteAccountRequestWithBody constructs an http.Request for the DeleteAccount method, with any body, and a specified content type
+func NewDeleteAccountRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/account/deletion/confirm")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewListDevicesRequest constructs an http.Request for the ListDevices method
@@ -2477,6 +2638,33 @@ func WithBaseURL(baseURL string) ClientOption {
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
 
+	// RequestAccountDeletionWithResponse Ask to delete the account
+	//
+	// Mails the signed-in account a code that confirms deleting it. The session alone is not enough: one left open, or stolen, must not be able to erase everything its owner stored. A code rather than the password, so an account that signed up through a provider can be deleted too.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/account/deletion (the `RequestAccountDeletion` operationId).
+	RequestAccountDeletionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RequestAccountDeletionResponse, error)
+
+	// DeleteAccountWithBodyWithResponse Delete the account with the mailed code
+	//
+	// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+	DeleteAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteAccountResponse, error)
+
+	// DeleteAccountWithResponse Delete the account with the mailed code
+	//
+	// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+	DeleteAccountWithResponse(ctx context.Context, body DeleteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteAccountResponse, error)
+
 	// ListDevicesWithResponse Paired devices
 	//
 	// Lists the account's live devices. Tokens are never part of the answer.
@@ -2782,6 +2970,130 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /v1/health (the `GetHealth` operationId).
 	GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error)
+}
+
+type RequestAccountDeletionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *AcceptedOutputBody
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r RequestAccountDeletionResponse) GetJSON202() *AcceptedOutputBody {
+	return r.JSON202
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RequestAccountDeletionResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r RequestAccountDeletionResponse) GetApplicationproblemJSON429() *ErrorModel {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RequestAccountDeletionResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RequestAccountDeletionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RequestAccountDeletionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RequestAccountDeletionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RequestAccountDeletionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteAccountResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *ErrorModel
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *ErrorModel
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *ErrorModel
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *ErrorModel
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteAccountResponse) GetApplicationproblemJSON401() *ErrorModel {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r DeleteAccountResponse) GetApplicationproblemJSON422() *ErrorModel {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r DeleteAccountResponse) GetApplicationproblemJSON429() *ErrorModel {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteAccountResponse) GetApplicationproblemJSON500() *ErrorModel {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteAccountResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAccountResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAccountResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
 }
 
 type ListDevicesResponse struct {
@@ -4385,6 +4697,51 @@ func (r GetHealthResponse) ContentType() string {
 	return ""
 }
 
+// RequestAccountDeletionWithResponse Ask to delete the account
+//
+// Mails the signed-in account a code that confirms deleting it. The session alone is not enough: one left open, or stolen, must not be able to erase everything its owner stored. A code rather than the password, so an account that signed up through a provider can be deleted too.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/account/deletion (the `RequestAccountDeletion` operationId).
+func (c *ClientWithResponses) RequestAccountDeletionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RequestAccountDeletionResponse, error) {
+	rsp, err := c.RequestAccountDeletion(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRequestAccountDeletionResponse(rsp)
+}
+
+// DeleteAccountWithBodyWithResponse Delete the account with the mailed code
+//
+// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+func (c *ClientWithResponses) DeleteAccountWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteAccountResponse, error) {
+	rsp, err := c.DeleteAccountWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAccountResponse(rsp)
+}
+
+// DeleteAccountWithResponse Delete the account with the mailed code
+//
+// Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /v1/account/deletion/confirm (the `DeleteAccount` operationId).
+func (c *ClientWithResponses) DeleteAccountWithResponse(ctx context.Context, body DeleteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteAccountResponse, error) {
+	rsp, err := c.DeleteAccount(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAccountResponse(rsp)
+}
+
 // ListDevicesWithResponse Paired devices
 //
 // Lists the account's live devices. Tokens are never part of the answer.
@@ -4893,6 +5250,103 @@ func (c *ClientWithResponses) GetHealthWithResponse(ctx context.Context, reqEdit
 		return nil, err
 	}
 	return ParseGetHealthResponse(rsp)
+}
+
+// ParseRequestAccountDeletionResponse parses an HTTP response from a RequestAccountDeletionWithResponse call
+func ParseRequestAccountDeletionResponse(rsp *http.Response) (*RequestAccountDeletionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RequestAccountDeletionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest AcceptedOutputBody
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAccountResponse parses an HTTP response from a DeleteAccountWithResponse call
+func ParseDeleteAccountResponse(rsp *http.Response) (*DeleteAccountResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAccountResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest ErrorModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseListDevicesResponse parses an HTTP response from a ListDevicesWithResponse call

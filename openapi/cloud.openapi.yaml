@@ -216,6 +216,23 @@ components:
       required:
         - code
       type: object
+    DeleteAccountInputBody:
+      additionalProperties: false
+      properties:
+        $schema:
+          description: A URL to the JSON Schema for this object.
+          examples:
+            - https://example.com/schemas/DeleteAccountInputBody.json
+          format: uri
+          readOnly: true
+          type: string
+        code:
+          description: The 6-digit code from the account deletion email.
+          pattern: ^[0-9]{6}$
+          type: string
+      required:
+        - code
+      type: object
     DeviceBody:
       additionalProperties: false
       properties:
@@ -720,6 +737,82 @@ info:
   version: 0.0.0-dev
 openapi: 3.1.0
 paths:
+  /v1/account/deletion:
+    post:
+      description: "Mails the signed-in account a code that confirms deleting it. The session alone is not enough: one left open, or stolen, must not be able to erase everything its owner stored. A code rather than the password, so an account that signed up through a provider can be deleted too."
+      operationId: requestAccountDeletion
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedOutputBody"
+          description: Accepted
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Ask to delete the account
+      tags:
+        - auth
+  /v1/account/deletion/confirm:
+    post:
+      description: "Spends the code and deletes the account for good, with everything it owns: every session ends, every paired device is unpaired, every backup is erased. There is no undo."
+      operationId: deleteAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountInputBody"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unauthorized
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Unprocessable Entity
+        "429":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Too Many Requests
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Internal Server Error
+      security:
+        - sessionToken: []
+      summary: Delete the account with the mailed code
+      tags:
+        - auth
   /v1/account/devices:
     get:
       description: Lists the account's live devices. Tokens are never part of the answer.
