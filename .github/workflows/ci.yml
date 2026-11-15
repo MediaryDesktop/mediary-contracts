@@ -1,62 +1,85 @@
 name: ci
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+    push:
+        branches: [main]
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  # The generated files are committed so consumers can `go get` and `npm i`
-  # without a toolchain. CI's only job is to prove they still match the spec.
-  generated:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
+    # The generated client is committed so the node can `go get` it without a
+    # toolchain. This job proves it still matches the spec.
+    generated:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.27"
-          cache: false
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: '1.27'
+                  cache: false
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "24"
-          cache: npm
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: '24'
+                  cache: npm
 
-      - name: Install oapi-codegen
-        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0
+            - name: Install oapi-codegen
+              run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0
 
-      - run: npm ci
+            - run: npm ci
 
-      - name: Generated output matches the spec
-        run: npm run check
+            - name: Generated output matches the spec
+              run: npm run check
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
+    # Nodes in the field are older than the cloud (docs/contracts-and-codegen.md
+    # §3): a change that breaks an old client must not reach main unnoticed.
+    breaking:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.27"
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: '1.27'
+                  cache: false
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "24"
-          cache: npm
+            - name: Install oasdiff
+              run: go install github.com/oasdiff/oasdiff@v1.37.0
 
-      - name: Build Go distribution
-        working-directory: go
-        run: go build ./...
+            - name: No breaking changes against the previous spec
+              env:
+                  BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+              run: |
+                  if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+                    || ! git cat-file -e "$BASE:openapi/cloud.openapi.yaml" 2>/dev/null; then
+                    echo "No previous spec to compare with."
+                    exit 0
+                  fi
+                  git show "$BASE:openapi/cloud.openapi.yaml" > "$RUNNER_TEMP/base.yaml"
+                  oasdiff breaking "$RUNNER_TEMP/base.yaml" openapi/cloud.openapi.yaml --fail-on ERR
 
-      - run: npm ci
-      - run: npm run format:check
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
 
-      - name: Build TypeScript distribution
-        working-directory: ts
-        run: |
-          npm ci
-          npm run build
+            - uses: actions/setup-go@v6
+              with:
+                  go-version: '1.27'
+
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: '24'
+                  cache: npm
+
+            - name: Build Go distribution
+              working-directory: go
+              run: go build ./...
+
+            - run: npm ci
+            - run: npm run format:check

@@ -4,23 +4,21 @@
 [TZ §3.1](../TZ.md).
 
 Тут **немає написаного вручну коду**. Специфікацію породжує huma всередині
-`mediary-cloud`; цей репозиторій лише розкладає її на два дистрибутиви.
+`mediary-cloud`; цей репозиторій зберігає її й Go-клієнт, згенерований з неї.
 
 ```
 mediary-cloud (huma)
       │  task openapi
       ▼
-openapi/cloud.openapi.yaml
-      │
-      ├── oapi-codegen ──────▶ go/cloudclient   ← self-hosted нода
-      └── openapi-typescript ─▶ ts/src          ← десктоп-UI
+openapi/cloud.openapi.yaml ─┬─ oapi-codegen ──────▶ go/cloudclient  ← self-hosted нода
+                            └─ openapi-typescript ─▶ (у mediary-node/desktop) ← десктоп-UI
 ```
 
 ## Використання
 
 ```bash
 npm ci
-npm run generate     # перегенерувати обидва дистрибутиви
+npm run generate     # перегенерувати Go-клієнт
 npm run check        # впасти, якщо закомічений вивід відстав від спеки
 ```
 
@@ -31,16 +29,20 @@ npm run check        # впасти, якщо закомічений вивід 
 node scripts/sync-contracts.mjs
 ```
 
-## Дистрибутиви
+## Що тут лежить
 
-| Шлях | Пакет | Споживач |
-|---|---|---|
-| `go/` | `github.com/MediaryDesktop/mediary-contracts/go` | нода (`mediary-node/server`) |
-| `ts/` | `@mediaryorg/mediary-contracts` | десктоп-UI (`mediary-node/desktop`) |
+| Шлях       | Що                                               | Споживач                               |
+| ---------- | ------------------------------------------------ | -------------------------------------- |
+| `openapi/` | спека в YAML і JSON                              | десктоп-UI генерує з неї типи й ліміти |
+| `go/`      | `github.com/MediaryDesktop/mediary-contracts/go` | нода (`mediary-node/server`)           |
 
 Go-дистрибутив містить **лише клієнт і моделі**, без серверних заглушок: сервер
 реалізує huma в `mediary-cloud`, і друге визначення тих самих ендпоінтів було б
 джерелом розходження.
+
+Окремого npm-пакета немає: десктоп живе в одному репозиторії з нодою й генерує
+TS-типи з тієї самої спеки, на тому самому коміті, що закріплений у `go.mod`
+ноди.
 
 ## Чому окремий репозиторій
 
@@ -51,11 +53,3 @@ Go-дистрибутив містить **лише клієнт і моделі
 Ціна: крос-катна зміна API — це три PR замість одного (хмара → контракти →
 нода). Процедура й правила сумісності — у
 [docs/contracts-and-codegen.md](docs/contracts-and-codegen.md).
-
-## Іменування npm-пакета
-
-Скоуп `@mediaryorg` уже містить `@mediaryorg/contracts` — це gRPC-контракти
-іншого проєкту (`d:/Web/Mediary/mediary-microservices`). Щоб не було колізії,
-цей пакет називається `@mediaryorg/mediary-contracts`. Якщо старий проєкт буде
-згорнуто, коротшу назву можна звільнити й перейменувати — пакет ще не
-опублікований.

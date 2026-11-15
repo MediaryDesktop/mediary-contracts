@@ -7,10 +7,10 @@ package: cloudclient
 output: go/cloudclient/client.gen.go
 
 generate:
-  models: true
-  client: true
-  embedded-spec: false
+    models: true
+    client: true
+    embedded-spec: false
 
 output-options:
-  skip-prune: true
-  user-templates: {}
+    skip-prune: true
+    user-templates: {}
